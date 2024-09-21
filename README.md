@@ -1,15 +1,19 @@
 # C File System Library - libcfs
-I wanted to make working with files easier in C with some useful utilities related to constructing file paths.
+I wanted to make working with files and directories easier in C with some useful utilities related to constructing file paths.
 
 I'm trying to make this library as cross platform as possible, but if something doesn't work, feel free to submit a PR.
 
 ## Features
+NOTE: some of these features are still in development
+
 * Get Current User's Home Directory
 * Construct arbitrary directory/file paths
 * Check if a path exists
 * Check if a path is a file/directory
 * Create/Remove/Rename directories
 * Traverse a directory's contents
+* Overwrite/append files
+* Read or stream files
 
 ## Building
 This is a typical CMake project with the following options:
