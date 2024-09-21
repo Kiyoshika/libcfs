@@ -14,42 +14,65 @@
 char* cfs_path_home();
 
 /**
- * Creates an arbitrary path with a trailing '/' or '\' (windows).
- *
- * Ex: vcfs_path_dir(3, "path", "to", "something")
- *     UNIX: /path/to/something
- *     WINDOWS: \path\to\something
+ * Creates an arbitrary path with a trailing '/' or '\' (windows) using variadic arguemnts.
+ * Useful if you know the exact path ahead of time.
  *
  * Returns a heap-allocated char* containing the constructed path or NULL on failure.
  */
 char* vcfs_path_dir(size_t n, ...);
 
 /**
- * Creates an arbitrary path WITHOUT a trailing '/' or '\' (windows) used for files.
+ * Creates an arbitrary path with a trailing '/' or '\' (windows) using a dynamic array of strings.
+ * Useful if you need to generate the path dynamically at run time.
  *
- * Ex: vcfs_path_file(4, "path", "to", "something", "file.txt");
- *     UNIX: /path/to/something/file.txt
- *     WINDOWS: \path\to\something\file.txt
+ * Returns a heap-allocated char* containing the constructed path or NULL on failure.
+*/
+char* cfs_path_dir(size_t n, const char** const components);
+
+/**
+ * Creates an arbitrary path WITHOUT a trailing '/' or '\' (windows) used for files using variadic arguments. 
+ * Useful if you know the exact path ahead of time.
  *
  * Returns a heap-allocated char* containing the constructed path or NULL on failure.
  */
 char* vcfs_path_file(size_t n, ...);
 
 /**
- * Creates an arbitrary path from user's home directory with a trailing '/' or '\' (windows).
+ * Creates an arbitrary path WITHOUT a trailing '/' or '\' (windows) used for files using a dynamic array of strings.
+ * Usefil if you need to generate the path dynamically at run time.
  *
- * Ex: vcfs_path_dir_from_home(3, "path", "from", "home");
- *     UNIX: /home/<user>/path/from/home/
- *     WINDOWS: C:\Users\<user>\path\from\home\
+ * Returns a heap-allocated char* containing the constructed path or NULL or failure.
+ */
+char* cfs_path_file(size_t n, const char** const components);
+
+/**
+ * Creates an arbitrary path starting from user's home directory with a trailing '/' or '\' (windows) using variadic arguemnts.
+ * Useful if you know the exact path ahead of time.
  *
  * Returns a heap-allocated char* containing the constructed path or NULL on failure.
  */
 char* vcfs_path_dir_from_home(size_t n, ...);
 
 /**
- * Creates an arbitrary path from user's home directory WITHOUT a trailing '/' or '\' (windows).
- * Ex: vcfs_path_file_from_home(4, "path", "from", "home", "file.txt")
- *     UNIX: /home/<user>/path/from/home/file.txt
- *     WINDOWS: C:\Users\<user>\path\from\home\file.txt
+ * Creates an arbitrary path starting from user's home directory with a trailing '/' or '\' (windows) using a dynamic array of strings.
+ * Useful if need to generate the path dynamically at run time.
+ *
+ * Returns a heap-allocated char* containing the constructed path or NULL on failure.
+ */
+char* cfs_path_dir_from_home(size_t n, const char** const components);
+
+/**
+ * Creates an arbitrary path starting from user's home directory WITHOUT a trailing '/' or '\' (windows) using variadic arguments.
+ * Useful if you know the exact path ahead of time.
+ *
+ * Returns a heap-allocated char* containing the constructed path or NULL on failure.
  */
 char* vcfs_path_file_from_home(size_t n, ...);
+
+/**
+ * Creates an arbitrary path starting from user's home directory WITHOUT a trailing '/' or '\' (windows) using a dynamic array of strings.
+ * Useful if you need to generate the path dynamically at run time.
+ *
+ * Returns a heap-allocated char* containing the constructed path or NULL on failure.
+ */
+char* cfs_path_file_from_home(size_t n, const char** const components);

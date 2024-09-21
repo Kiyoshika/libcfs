@@ -1,3 +1,5 @@
-file(GLOB_RECURSE SRC_ROOT ${PROJECT_SOURCE_DIR}/src/*.c)
-add_library(cfs ${SRC_ROOT})
+add_library(cfs 
+    directory.c
+    path.c
+)
 target_include_directories(cfs PUBLIC ${PROJECT_SOURCE_DIR}/include)
