@@ -63,7 +63,7 @@ else
 ### Creating paths
 This will construct an arbitrary path delimited by `/` on unix or `\` on windows.
 
-**NOTE:** This is NOT create any files or directories - only creates the *path*. If you want to actually *create* these things, look at the [file](FILE.md) or [directory](DIRECTORY.md) API.
+**NOTE:** This will NOT create any files or directories - only creates the *path*. If you want to actually *create* these things, look at the [file](FILE.md) or [directory](DIRECTORY.md) API.
 
 This returns a heap-allocated `char*` that you must free afterwards.
 
@@ -83,7 +83,7 @@ You can construct a path with variable arguments as follows:
     /some/random/path/ (UNIX)
     \some\random\path\ (WINDOWS)
 */
-char* dir_path = vcfs_path_dir(3, "some", "random", "path);
+char* dir_path = vcfs_path_dir(3, "some", "random", "path");
 free(dir_path);
 
 /*
