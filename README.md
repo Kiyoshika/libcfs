@@ -3,6 +3,9 @@ I wanted to make working with files and directories easier in C with some useful
 
 I'm trying to make this library as cross platform as possible, but if something doesn't work, feel free to submit a PR.
 
+## Documentation
+Check out the work in progress [documentation](docs/) on how to use this library.
+
 ## Features
 NOTE: some of these features are still in development
 
