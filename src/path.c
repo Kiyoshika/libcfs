@@ -2,6 +2,31 @@
 #include "util.h"
 #include "path_internal.c"
 
+struct cfs_result_t cfs_path_exists(const char* const path)
+{
+    struct cfs_result_t result;
+
+    struct stat s = {0};
+    int stat_result = stat(path, &s);
+    if (stat_result == -1)
+    {
+        if (errno == ENOTDIR || errno == ENOENT)
+        {
+            cfs_result_set_error(&result, false);
+            cfs_result_message_writef(&result, "Path '%s' doesn't exist.\n", path);
+            return result;
+        }
+
+        cfs_result_set_error(&result, true);
+        cfs_result_message_write_perror(&result);
+        return result;
+    }
+
+    cfs_result_set_error(&result, false);
+    cfs_result_value_set_bool(&result, true);
+    return result;
+}
+
 char* cfs_path_home()
 {
     CFS_IMPL_WIN_OTHER(

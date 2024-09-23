@@ -1,5 +1,6 @@
 #include "path.h"
 #include "util.h"
+#include "result.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -109,9 +110,19 @@ int main()
     CFS_IMPL_WIN_OTHER(
     {
         assert(strcmp(path, "\\some\\random\\path\\") == 0);
+        // it's very unlikely for this path to exist, so hopefully that wouldn't cause test failures
+        struct cfs_result_t result = cfs_path_exists(path);
+        assert(result.is_error == false);
+        assert(strcmp(result.msg, "Path '\\some\\random\\path\\' doesn't exist.\n") == 0);
+        assert(cfs_result_value_get_bool(&result) == false);
     },
     {
         assert(strcmp(path, "/some/random/path/") == 0);
+        // it's very unlikely for this path to exist, so hopefully that wouldn't cause test failures
+        struct cfs_result_t result = cfs_path_exists(path);
+        assert(result.is_error == false);
+        assert(strcmp(result.msg, "Path '/some/random/path/' doesn't exist.\n") == 0);
+        assert(cfs_result_value_get_bool(&result) == false);
     });
     free(path);
 
@@ -143,6 +154,13 @@ int main()
     {
         assert(strcmp(path, "/some/random/path/file.txt") == 0);
     });
+
+    // the home directory SHOULD exist unless the environment variables for the user are messed up
+    char* home = cfs_path_home();
+    struct cfs_result_t result = cfs_path_exists(home);
+    assert(result.is_error == false);
+    assert(cfs_result_value_get_bool(&result) == true);
+    free(home);
 
     free(path);
 

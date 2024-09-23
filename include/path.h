@@ -4,8 +4,35 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <errno.h>
+
+/* snippet from stack overflow: https://stackoverflow.com/a/62371749 */
+// Windows does not define the S_ISREG and S_ISDIR macros in stat.h, so we do.
+// We have to define _CRT_INTERNAL_NONSTDC_NAMES 1 before #including sys/stat.h
+// in order for Microsoft's stat.h to define names like S_IFMT, S_IFREG, and S_IFDIR,
+// rather than just defining  _S_IFMT, _S_IFREG, and _S_IFDIR as it normally does.
+#define _CRT_INTERNAL_NONSTDC_NAMES 1
+#include <sys/stat.h>
+#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
+  #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#endif
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+  #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+
+#include <sys/types.h>
 
 #include "directory.h"
+#include "result.h"
+
+/**
+ * Check if a path to a directory OR file exists.
+ * If you want more fine-grained checks, use cfs_dir_exists() or cfs_file_exists().
+ *
+ * Returns a cfs_result_t with a boolean value set for whether or not the path exists.
+ */
+struct cfs_result_t cfs_path_exists(const char* const path);
 
 /**
  * Get the home path for current user.
