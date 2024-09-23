@@ -1,5 +1,5 @@
 # C File System Library - libcfs
-I wanted to make working with files and directories easier in C with some useful utilities related to constructing file paths.
+I wanted to make working with files and directories easier in C.
 
 I'm trying to make this library as cross platform as possible, but if something doesn't work, feel free to submit a PR.
 
