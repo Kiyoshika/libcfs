@@ -9,6 +9,7 @@ This is the API for handling paths - from checking existence, getting home direc
 ## Content
 * [Checking if a path exists](#checking-if-a-path-exists)
 * [Getting the home directory](#getting-the-home-directory)
+* [Getting the current directory](#getting-the-current-directory)
 * [Creating paths](#creating-paths)
 * [Creating paths from home directory](#creating-paths-from-home-directory)
 
@@ -57,6 +58,25 @@ else
 {
     printf("HOME: %s\n", home);
     free(home);
+}
+```
+
+### Getting the current directory
+Get the current working directory as a heap-allocated `char*`. Returns `NULL` on failure.
+
+Note that YOU have ownership of this pointer, so you're responsible for freeing it afterwards.
+
+```c
+#include "path.h"
+
+char* current_dir = cfs_path_current_dir();
+
+if (!home)
+    printf("Couldn't get current directory.\n");
+else
+{
+    printf("CURRENT DIR: %s\n", current_dir);
+    free(current_dir);
 }
 ```
 

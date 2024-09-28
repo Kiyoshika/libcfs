@@ -143,3 +143,21 @@ char* cfs_path_file_from_home(size_t n, const char** const components)
 
     return path;
 }
+
+char* cfs_path_current_dir()
+{
+    CFS_IMPL_WIN_OTHER(
+    {
+        DWORD buff_size = GetCurrentDir(0, NULL);
+        char* buffer = calloc(buff_size + 1, sizeof(char));
+        if (GetCurrentDir(buff_size, buffer) != buff_size)
+        {
+            free(buffer);
+            return NULL;
+        }
+        return buffer;
+    },
+    {
+        return getcwd(NULL, 0);
+    });
+}

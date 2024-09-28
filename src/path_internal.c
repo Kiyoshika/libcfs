@@ -100,8 +100,6 @@ static char* __vcreate_full_path(size_t n, va_list component_list)
         return NULL;
 
     // use another iteration to construct the path
-    __append_path_delim(path_buffer);
-
     for (size_t i = 0; i < n; ++i)
     {
         const char* component = va_arg(path_component_copy, const char*);
@@ -110,6 +108,10 @@ static char* __vcreate_full_path(size_t n, va_list component_list)
             free(path_buffer);
             return NULL;
         }
+
+        // only append prefix / or \ if it doesn't exist already
+        if (i == 0 && component[i] != '/' && component[i] != '\\')
+            __append_path_delim(path_buffer);
         strcat(path_buffer, component);
         __append_path_delim(path_buffer);
     }

@@ -164,5 +164,11 @@ int main()
 
     free(path);
 
+    // hard to test exact path since it's dynamic, but we'll at least check
+    // it's not NULL
+    char* current_dir_path = cfs_path_current_dir();
+    assert(current_dir_path != NULL);
+    free(current_dir_path);
+
     return 0;
 }

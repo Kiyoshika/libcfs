@@ -13,6 +13,7 @@ NOTE: some of these features are still in development
 * Construct arbitrary directory/file paths
 * Check if a path exists
 * Check if a path is a file/directory
+* Check metadata such as last modified time on files/directories
 * Create/Remove/Rename directories
 * Traverse a directory's contents
 * Overwrite/append files
