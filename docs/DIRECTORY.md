@@ -13,7 +13,7 @@ This is the API for handling directories - from checking existence, creating, re
 * [Rename directory](#rename-directory)
 
 ### Check directory exists
-This checks if a path exists AND if it's a directory.
+This checks if an existing path is a directory. If the path doesn't exist at all, `is_error` is set to true.
 
 If the path exists but is not a directory, the result will be false.
 
