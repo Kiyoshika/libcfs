@@ -7,7 +7,7 @@
 int main()
 {
     // if a path doesn't exist, it will be an error
-    char* fake_dir_path = vcfs_path_dir(3, "some", "fake", "path");
+    char* fake_dir_path = vcfs_path_dir(3, false, "some", "fake", "path");
     struct cfs_result_t result = cfs_dir_exists(fake_dir_path);
     assert(result.is_error == true);
     free(fake_dir_path);
@@ -21,7 +21,7 @@ int main()
 
     // existing path to a directory
     char* current_dir_path = cfs_path_current_dir();
-    char* path = vcfs_path_dir(2, current_dir_path, "sample-dir");
+    char* path = vcfs_path_dir(2, false, current_dir_path, "sample-dir");
     result = cfs_dir_exists(path);
     fprintf(stderr, "%s\n", result.msg);
     assert(result.is_error == false);
@@ -29,7 +29,7 @@ int main()
 
     // existing path but to a file, not a directory
     free(path);
-    path = vcfs_path_file(3, current_dir_path, "sample-dir", "sample-file.txt");
+    path = vcfs_path_file(3, false, current_dir_path, "sample-dir", "sample-file.txt");
     result = cfs_dir_exists(path);
     assert(result.is_error == false);
     assert(cfs_result_value_get_bool(&result) == false);

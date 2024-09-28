@@ -40,7 +40,7 @@ char* cfs_path_home();
  *
  * Returns a heap-allocated char* containing the constructed path or NULL on failure.
  */
-char* vcfs_path_dir(size_t n, ...);
+char* vcfs_path_dir(size_t n, bool use_leading_delim, ...);
 
 /**
  * Creates an arbitrary path with a trailing '/' or '\' (windows) using a dynamic array of strings.
@@ -48,7 +48,7 @@ char* vcfs_path_dir(size_t n, ...);
  *
  * Returns a heap-allocated char* containing the constructed path or NULL on failure.
 */
-char* cfs_path_dir(size_t n, const char** const components);
+char* cfs_path_dir(size_t n, bool use_leading_delim, const char** const components);
 
 /**
  * Creates an arbitrary path WITHOUT a trailing '/' or '\' (windows) used for files using variadic arguments. 
@@ -56,7 +56,7 @@ char* cfs_path_dir(size_t n, const char** const components);
  *
  * Returns a heap-allocated char* containing the constructed path or NULL on failure.
  */
-char* vcfs_path_file(size_t n, ...);
+char* vcfs_path_file(size_t n, bool use_leading_delim, ...);
 
 /**
  * Creates an arbitrary path WITHOUT a trailing '/' or '\' (windows) used for files using a dynamic array of strings.
@@ -64,7 +64,7 @@ char* vcfs_path_file(size_t n, ...);
  *
  * Returns a heap-allocated char* containing the constructed path or NULL or failure.
  */
-char* cfs_path_file(size_t n, const char** const components);
+char* cfs_path_file(size_t n, bool use_leading_delim, const char** const components);
 
 /**
  * Creates an arbitrary path starting from user's home directory with a trailing '/' or '\' (windows) using variadic arguemnts.

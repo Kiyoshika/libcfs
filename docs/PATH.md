@@ -92,7 +92,8 @@ You can create paths one of two ways:
     * These functions are prefixed with a `v` to indicate variable arguments
 * With a `char**` dynamic array of `char*` - useful if the path is dynamically generated at run time
 
-And finally, there are two additional options:
+And finally, there are three additional options:
+* Prepend the path delimiter at the beginning of the path
 * Create directory paths - adds a trailing `/` or `\` on windows
 * Create file paths - ignores trailing delimiter
 
@@ -103,14 +104,22 @@ You can construct a path with variable arguments as follows:
     /some/random/path/ (UNIX)
     \some\random\path\ (WINDOWS)
 */
-char* dir_path = vcfs_path_dir(3, "some", "random", "path");
+// NOTE: the 'true' in the second argument prepends the path delimiter
+char* dir_path = vcfs_path_dir(3, true, "some", "random", "path");
 free(dir_path);
 
 /*
-    /some/random/path/ (UNIX)
-    \some\random\path\ (WINDOWS)
+    some/random/path/ (UNIX)
+    some\random\path\ (WINDOWS)
 */
-char* file_path = vcfs_path_file(3, "some", "random", "file.txt");
+// note the delimiter at the beginning is not present with 'false'
+dir_path = vcfs_path_dir(3, false, "some", "random", "path");
+
+/*
+    /some/random/path/file.txt (UNIX)
+    \some\random\path\file.txt (WINDOWS)
+*/
+char* file_path = vcfs_path_file(3, true, "some", "random", "file.txt");
 free(file_path);
 ```
 
@@ -132,7 +141,7 @@ dynamic_path[2] = strdup("path");
     /some/random/path/ (UNIX)
     \some\random\path\ (WINDOWS)
 */
-char* dir_path = cfs_path_dir(3, (const char** const)dynamic_path);
+char* dir_path = cfs_path_dir(3, true, (const char** const)dynamic_path);
 free(dir_path);
 
 free(dynamic_path[2]);
@@ -142,7 +151,7 @@ dynamic_path[2] = strdup("file.txt");
     /some/random/file.txt (UNIX)
     \some\random\file.txt (WINDOWS)
 */
-char* file_path = cfs_path_file(3, (const char** const)dynamic_path);
+char* file_path = cfs_path_file(3, true, (const char** const)dynamic_path);
 free(file_path);
 
 free(dynamic_path[0]);

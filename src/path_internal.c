@@ -15,8 +15,8 @@ static char*  __alloc_path_buffer(size_t, const char** const);
 
 static void   __append_path_delim(char*);
 
-static char*  __vcreate_full_path(size_t, va_list);
-static char*  __create_full_path(size_t, const char** const);
+static char*  __vcreate_full_path(size_t, bool, va_list);
+static char*  __create_full_path(size_t, bool, const char** const);
 
 static char*  __vcreate_full_path_from_home(size_t, va_list);
 static char*  __create_full_path_from_home(size_t, const char** const);
@@ -85,7 +85,7 @@ static void __append_path_delim(char* path_buffer)
     });
 }
 
-static char* __vcreate_full_path(size_t n, va_list component_list)
+static char* __vcreate_full_path(size_t n, bool use_leading_delim, va_list component_list)
 {
     va_list path_component;
     va_list path_component_copy;
@@ -94,10 +94,13 @@ static char* __vcreate_full_path(size_t n, va_list component_list)
 
     // use one iteration to allocate the path buffer
     char* path_buffer = __valloc_path_buffer(n, path_component_copy);
-    va_end(path_component_copy);
+    va_end(path_component);
 
     if (!path_buffer)
         return NULL;
+
+    if (use_leading_delim)
+        __append_path_delim(path_buffer);
 
     // use another iteration to construct the path
     for (size_t i = 0; i < n; ++i)
@@ -109,9 +112,6 @@ static char* __vcreate_full_path(size_t n, va_list component_list)
             return NULL;
         }
 
-        // only append prefix / or \ if it doesn't exist already
-        if (i == 0 && component[i] != '/' && component[i] != '\\')
-            __append_path_delim(path_buffer);
         strcat(path_buffer, component);
         __append_path_delim(path_buffer);
     }
@@ -120,13 +120,14 @@ static char* __vcreate_full_path(size_t n, va_list component_list)
     return path_buffer;
 }
 
-static char* __create_full_path(size_t n, const char** components)
+static char* __create_full_path(size_t n, bool use_leading_delim, const char** components)
 {
     char* path_buffer = __alloc_path_buffer(n, components);
     if (!path_buffer)
         return NULL;
 
-    __append_path_delim(path_buffer);
+    if (use_leading_delim)
+        __append_path_delim(path_buffer);
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -181,7 +182,7 @@ static char* __vcreate_full_path_from_home(size_t n, va_list component_list)
     if (home[end_home] == '/' || home[end_home] == '\\')
         home[end_home] = '\0';
 
-    char* path = __vcreate_full_path(n, component_list);
+    char* path = __vcreate_full_path(n, false, component_list);
     if (!path)
     {
         free(home);
@@ -220,7 +221,7 @@ static char* __create_full_path_from_home(size_t n, const char** const component
     if (home[end_home] == '/' || home[end_home] == '\\')
         home[end_home] = '\0';
 
-    char* path = __create_full_path(n, components);
+    char* path = __create_full_path(n, false, components);
     if (!path)
     {
         free(home);

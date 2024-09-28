@@ -13,6 +13,7 @@ struct cfs_result_t cfs_path_exists(const char* const path)
         if (errno == ENOTDIR || errno == ENOENT)
         {
             cfs_result_set_error(&result, false);
+            cfs_result_value_set_bool(&result, false);
             cfs_result_message_writef(&result, "Path '%s' doesn't exist.\n", path);
             return result;
         }
@@ -35,35 +36,35 @@ char* cfs_path_home()
     );
 }
 
-char* vcfs_path_dir(size_t n, ...)
+char* vcfs_path_dir(size_t n, bool use_leading_delim, ...)
 {
     if (n == 0)
         return NULL;
     
     va_list component_list;
-    va_start(component_list, n);
-    char* path = __vcreate_full_path(n, component_list);
+    va_start(component_list, use_leading_delim);
+    char* path = __vcreate_full_path(n, use_leading_delim, component_list);
     va_end(component_list);
 
     return path;
 }
 
-char* cfs_path_dir(size_t n, const char** const components)
+char* cfs_path_dir(size_t n, bool use_leading_delim, const char** const components)
 {
     if (n == 0 || components == NULL)
         return NULL;
 
-    return __create_full_path(n, components);
+    return __create_full_path(n, use_leading_delim, components);
 }
 
-char* vcfs_path_file(size_t n, ...)
+char* vcfs_path_file(size_t n, bool use_leading_delim, ...)
 {
     if (n == 0)
         return NULL;
 
     va_list component_list;
-    va_start(component_list, n);
-    char* path = __vcreate_full_path(n, component_list);
+    va_start(component_list, use_leading_delim);
+    char* path = __vcreate_full_path(n, use_leading_delim, component_list);
     va_end(component_list);
 
     if (!path)
@@ -75,12 +76,12 @@ char* vcfs_path_file(size_t n, ...)
     return path;
 }
 
-char* cfs_path_file(size_t n, const char** const components)
+char* cfs_path_file(size_t n, bool use_leading_delim, const char** const components)
 {
     if (n == 0 || components == NULL)
         return NULL;
 
-    char* path = __create_full_path(n, components);
+    char* path = __create_full_path(n, use_leading_delim, components);
     if (!path)
         return NULL;
 
@@ -148,9 +149,9 @@ char* cfs_path_current_dir()
 {
     CFS_IMPL_WIN_OTHER(
     {
-        DWORD buff_size = GetCurrentDir(0, NULL);
+        DWORD buff_size = GetCurrentDirectory(0, NULL);
         char* buffer = calloc(buff_size + 1, sizeof(char));
-        if (GetCurrentDir(buff_size, buffer) != buff_size)
+        if (GetCurrentDirectory(buff_size, buffer) == 0)
         {
             free(buffer);
             return NULL;

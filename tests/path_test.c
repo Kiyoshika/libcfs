@@ -9,16 +9,16 @@ int main()
 {
     // no arguments will always return NULL
 
-    char* path = vcfs_path_dir(0);
+    char* path = vcfs_path_dir(0, false);
     assert(path == NULL);
 
-    path = cfs_path_dir(0, NULL);
+    path = cfs_path_dir(0, false, NULL);
     assert(path == NULL);
 
-    path = vcfs_path_file(0);
+    path = vcfs_path_file(0, false);
     assert(path == NULL);
 
-    path = cfs_path_file(0, NULL);
+    path = cfs_path_file(0, false, NULL);
     assert(path == NULL);
 
     path = vcfs_path_dir_from_home(0);
@@ -46,28 +46,28 @@ int main()
     dynamic_path2[1] = strdup("b");
     dynamic_path2[2] = strdup("");
 
-    path = vcfs_path_dir(3, "", "", "");
+    path = vcfs_path_dir(3, false, "", "", "");
     assert(path == NULL);
 
-    path = cfs_path_dir(3, (const char** const)dynamic_path1);
+    path = cfs_path_dir(3, false, (const char** const)dynamic_path1);
     assert(path == NULL);
 
-    path = vcfs_path_dir(3, "a", "b", "");
+    path = vcfs_path_dir(3, false, "a", "b", "");
     assert(path == NULL);
 
-    path = cfs_path_dir(3, (const char** const)dynamic_path2);
+    path = cfs_path_dir(3, false, (const char** const)dynamic_path2);
     assert(path == NULL);
 
-    path = vcfs_path_file(3, "", "", "");
+    path = vcfs_path_file(3, false, "", "", "");
     assert(path == NULL);
 
-    path = cfs_path_file(3, (const char** const)dynamic_path1);
+    path = cfs_path_file(3, false, (const char** const)dynamic_path1);
     assert(path == NULL);
 
-    path = vcfs_path_file(3, "a", "b", "");
+    path = vcfs_path_file(3, false, "a", "b", "");
     assert(path == NULL);
 
-    path = cfs_path_file(3, (const char** const)dynamic_path2);
+    path = cfs_path_file(3, false, (const char** const)dynamic_path2);
     assert(path == NULL);
 
     path = vcfs_path_dir_from_home(3, "", "", "");
@@ -106,7 +106,27 @@ int main()
 
     // normal cases
 
-    path = vcfs_path_dir(3, "some", "random", "path");
+    path = vcfs_path_dir(3, false, "some", "random", "path");
+    CFS_IMPL_WIN_OTHER(
+    {
+        assert(strcmp(path, "some\\random\\path\\") == 0);
+        // it's very unlikely for this path to exist, so hopefully that wouldn't cause test failures
+        struct cfs_result_t result = cfs_path_exists(path);
+        assert(result.is_error == false);
+        assert(strcmp(result.msg, "Path 'some\\random\\path\\' doesn't exist.\n") == 0);
+        assert(cfs_result_value_get_bool(&result) == false);
+    },
+    {
+        assert(strcmp(path, "some/random/path/") == 0);
+        // it's very unlikely for this path to exist, so hopefully that wouldn't cause test failures
+        struct cfs_result_t result = cfs_path_exists(path);
+        assert(result.is_error == false);
+        assert(strcmp(result.msg, "Path 'some/random/path/' doesn't exist.\n") == 0);
+        assert(cfs_result_value_get_bool(&result) == false);
+    });
+    free(path);
+
+    path = vcfs_path_dir(3, true, "some", "random", "path");
     CFS_IMPL_WIN_OTHER(
     {
         assert(strcmp(path, "\\some\\random\\path\\") == 0);
@@ -132,7 +152,24 @@ int main()
     components[1] = strdup("random");
     components[2] = strdup("path");
 
-    path = cfs_path_dir(3, (const char** const)components);
+    path = cfs_path_dir(3, false, (const char** const)components);
+    CFS_IMPL_WIN_OTHER(
+    {
+        assert(strcmp(path, "some\\random\\path\\") == 0);
+    },
+    {
+        assert(strcmp(path, "some/random/path/") == 0);
+    });
+    free(path);
+    free(components[0]);
+    free(components[1]);
+    free(components[2]);
+
+    components[0] = strdup("some");
+    components[1] = strdup("random");
+    components[2] = strdup("path");
+
+    path = cfs_path_dir(3, true, (const char** const)components);
     CFS_IMPL_WIN_OTHER(
     {
         assert(strcmp(path, "\\some\\random\\path\\") == 0);
@@ -146,7 +183,16 @@ int main()
     free(components[2]);
     free(components);
 
-    path = vcfs_path_file(4, "some", "random", "path", "file.txt");
+    path = vcfs_path_file(4, false, "some", "random", "path", "file.txt");
+    CFS_IMPL_WIN_OTHER(
+    {
+        assert(strcmp(path, "some\\random\\path\\file.txt") == 0);
+    },
+    {
+        assert(strcmp(path, "some/random/path/file.txt") == 0);
+    });
+
+    path = vcfs_path_file(4, true, "some", "random", "path", "file.txt");
     CFS_IMPL_WIN_OTHER(
     {
         assert(strcmp(path, "\\some\\random\\path\\file.txt") == 0);
