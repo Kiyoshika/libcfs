@@ -101,19 +101,6 @@ static void __vcreate_full_path_d(struct cfs_result_string_t* result, size_t n, 
 
 static void __vcreate_full_path_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, bool use_leading_delim, va_list component_list)
 {
-    if (!buffer)
-    {
-        cfs_result_set_err_invalid_write(&result->info);
-        return;
-    }
-
-    if (max_buffer_size == 0)
-    {
-        cfs_result_set_err_invalid_arg(&result->info);
-        cfs_result_message_write(&result->info, "max_buffer_size must be > 0.\n");
-        return;
-    }
-
     va_list path_component;
     va_list path_component_copy;
     va_copy(path_component, component_list);
@@ -190,12 +177,6 @@ static inline void __dir_get_home_other_s(struct cfs_result_size_t* result, char
         return;
     }
 
-    if (!buffer)
-    {
-        cfs_result_set_err_invalid_write(&result->info);
-        return;
-    }
-
     strncat(buffer, home_ptr, max_buffer_size);
     if (strlen(home_ptr) >= max_buffer_size)
     {
@@ -240,12 +221,6 @@ static inline void __dir_get_home_win32_s(struct cfs_result_size_t* result, char
     {
         cfs_result_set_err_invalid_read(&result->info);
         cfs_result_message_write(&result->info, "Couldn't find environment variable(s) 'HOMEDRIVE' and/or 'HOMEPATH'.\n");
-        return;
-    }
-
-    if (!buffer)
-    {
-        cfs_result_set_err_invalid_write(&result->info);
         return;
     }
 
@@ -308,19 +283,6 @@ static void __create_full_path_d(struct cfs_result_string_t* result, size_t n, b
 
 static void __create_full_path_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, bool use_leading_delim, const char** components)
 {
-    if (!buffer)
-    {
-        cfs_result_set_err_invalid_write(&result->info);
-        return;
-    }
-
-    if (max_buffer_size == 0)
-    {
-        cfs_result_set_err_invalid_arg(&result->info);
-        cfs_result_message_write(&result->info, "max_buffer_size must be > 0.\n");
-        return;
-    }
-
     size_t required_buffer_size = __get_total_component_length(n, components) + 1;
 
     if (use_leading_delim)
@@ -404,12 +366,6 @@ static void __vcreate_full_path_from_home_d(struct cfs_result_string_t* result, 
 
 static void __vcreate_full_path_from_home_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, va_list component_list)
 {
-    if (!buffer)
-    {
-        cfs_result_set_err_invalid_write(&result->info);
-        return;
-    }
-
     va_list path_component;
     va_copy(path_component, component_list);
     size_t required_buffer_size = __vget_total_component_length(n, path_component);
@@ -499,19 +455,6 @@ static void __create_full_path_from_home_d(struct cfs_result_string_t* result, s
 
 static void __create_full_path_from_home_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, const char** components)
 {
-    if (!buffer)
-    {
-        cfs_result_set_err_invalid_write(&result->info);
-        return;
-    }
-
-    if (max_buffer_size == 0)
-    {
-        cfs_result_set_err_buffer_limit(&result->info);
-        cfs_result_message_write(&result->info, "max_buffer_size must be > 0.\n");
-        return;
-    }
-
     size_t required_buffer_size = __get_total_component_length(n, components);
 
     struct cfs_result_size_t home_result = cfs_path_home_s(buffer, max_buffer_size);

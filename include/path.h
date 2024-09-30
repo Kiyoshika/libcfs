@@ -170,7 +170,7 @@ struct cfs_result_string_t cfs_path_dir_from_home_d(size_t n, const char** compo
  * If the provided buffer was not big enough, is_error is set to true with error_type = CFS_ERR_BUFFER_LIMIT 
  * and a size_t value is written containing the required buffer size.
  */
-struct cfs_result_size_t cfs_path_dir_from_home_s(char* buffer, size_t max_buffer_size, size_t n, ...);
+struct cfs_result_size_t cfs_path_dir_from_home_s(char* buffer, size_t max_buffer_size, size_t n, const char** components);
 
 /**
  * Creates an arbitrary path starting from user's home directory WITHOUT a trailing '/' or '\' (windows) using variadic arguments.
@@ -212,7 +212,7 @@ struct cfs_result_string_t cfs_path_file_from_home_d(size_t n, const char** comp
  * If the provided buffer was not big enough, is_error is set to true with error_type = CFS_ERR_BUFFER_LIMIT 
  * and a size_t value is written containing the required buffer size.
  */
-struct cfs_result_size_t cfs_path_file_from_home_s(char* buffer, size_t max_buffer_size, size_t n, ...);
+struct cfs_result_size_t cfs_path_file_from_home_s(char* buffer, size_t max_buffer_size, size_t n, const char** components);
 
 /**
  * Get the current working directory.
