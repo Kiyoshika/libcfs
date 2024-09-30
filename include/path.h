@@ -233,8 +233,6 @@ struct cfs_result_string_t cfs_path_current_dir_d();
  */
 struct cfs_result_size_t cfs_path_current_dir_s(char* buffer, size_t max_buffer_size);
 
-// TODO: implement below
-
 /**
  * Get a directory path relative to the current directory using variadic arguments.
  *

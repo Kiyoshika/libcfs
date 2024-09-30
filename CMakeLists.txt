@@ -9,7 +9,7 @@ option(COMPILE_TESTS OFF)
 
 if (DEBUG_MODE)
     message("COMPILING IN DEBUG MODE")
-    set(CMAKE_C_FLAGS "-O0 -g -Wall -Wextra")
+    set(CMAKE_C_FLAGS "-O0 -g -Wall -Wextra -fsanitize=address")
 else()
     message("COMPILING IN RELEASE MODE")
     set(CMAKE_C_FLAGS "-O2 -Wall -Wextra")
