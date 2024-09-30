@@ -1,31 +1,5 @@
 // internal functions to be included in the main implementation file
 
-// most of these internal functions have a varying implementation depending
-// on whether it takes variadic args (prefixed with 'v') or a dynamic
-// array of strings.
-//
-// these forward declarations are only here for "documentation" or to
-// quickly glance the internal API
-
-static size_t __vget_total_component_length(size_t, va_list);
-static size_t __get_total_component_length(size_t, const char** const);
-
-static char*  __valloc_path_buffer(size_t, va_list);
-static char*  __alloc_path_buffer(size_t, const char** const);
-
-static void   __append_path_delim(char*);
-
-static char*  __vcreate_full_path(size_t, bool, va_list);
-static char*  __create_full_path(size_t, bool, const char** const);
-
-static char*  __vcreate_full_path_from_home(size_t, va_list);
-static char*  __create_full_path_from_home(size_t, const char** const);
-
-static inline char* __dir_get_home_win32();
-static inline char* __dir_get_home_other();
-
-/* IMPLEMENTATION */
-
 static size_t __vget_total_component_length(size_t n, va_list component_list)
 {
     size_t total_len = 0;
@@ -85,7 +59,7 @@ static void __append_path_delim(char* path_buffer)
     });
 }
 
-static char* __vcreate_full_path(size_t n, bool use_leading_delim, va_list component_list)
+static void __vcreate_full_path_d(struct cfs_result_string_t* result, size_t n, bool use_leading_delim, va_list component_list)
 {
     va_list path_component;
     va_list path_component_copy;
@@ -97,7 +71,10 @@ static char* __vcreate_full_path(size_t n, bool use_leading_delim, va_list compo
     va_end(path_component);
 
     if (!path_buffer)
-        return NULL;
+    {
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
 
     if (use_leading_delim)
         __append_path_delim(path_buffer);
@@ -109,7 +86,9 @@ static char* __vcreate_full_path(size_t n, bool use_leading_delim, va_list compo
         if (strlen(component) == 0)
         {
             free(path_buffer);
-            return NULL;
+            cfs_result_set_err_invalid_arg(&result->info);
+            cfs_result_message_write(&result->info, "Path component cannot be length 0.\n");
+            return;
         }
 
         strcat(path_buffer, component);
@@ -117,14 +96,194 @@ static char* __vcreate_full_path(size_t n, bool use_leading_delim, va_list compo
     }
     va_end(path_component_copy);
 
-    return path_buffer;
+    cfs_result_set_success(&result->info);
 }
 
-static char* __create_full_path(size_t n, bool use_leading_delim, const char** components)
+static void __vcreate_full_path_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, bool use_leading_delim, va_list component_list)
+{
+    if (!buffer)
+    {
+        cfs_result_set_err_invalid_write(&result->info);
+        return;
+    }
+
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_invalid_arg(&result->info);
+        cfs_result_message_write(&result->info, "max_buffer_size must be > 0.\n");
+        return;
+    }
+
+    va_list path_component;
+    va_list path_component_copy;
+    va_copy(path_component, component_list);
+    va_copy(path_component_copy, path_component);
+
+    size_t required_buffer_size = __vget_total_component_length(n, path_component_copy) + 1;
+    va_end(path_component_copy);
+
+    if (use_leading_delim)
+        __append_path_delim(buffer);
+
+    max_buffer_size -= 1;
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        const char* component = va_arg(path_component, const char*);
+        size_t component_len = strlen(component);
+        if (component_len == 0)
+        {
+            cfs_result_set_err_invalid_arg(&result->info);
+            cfs_result_message_write(&result->info, "Path component can not have length 0.\n");
+            return;
+        }
+
+        strncat(buffer, component, component_len);
+        if (component_len >= max_buffer_size)
+        {
+            cfs_result_set_err_buffer_limit(&result->info);
+            result->value = required_buffer_size;
+            return;
+        }
+        max_buffer_size -= component_len;
+    }
+    va_end(path_component);
+
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        result->value = required_buffer_size;
+        return;
+    }
+
+    __append_path_delim(buffer);
+    cfs_result_set_success(&result->info);
+}
+
+static inline void __dir_get_home_other_d(struct cfs_result_string_t* result)
+{
+    char* home_ptr = getenv("HOME");
+    if (!home_ptr)
+    {
+        cfs_result_set_err_invalid_read(&result->info);
+        cfs_result_message_write(&result->info, "Couldn't find environment variable 'HOME'.\n");
+        return;
+    }
+
+    result->value = strdup(home_ptr);
+    if (!result->value)
+    {
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
+
+    cfs_result_set_success(&result->info);
+}
+
+static inline void __dir_get_home_other_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size)
+{
+    char* home_ptr = getenv("HOME");
+    if (!home_ptr)
+    {
+        cfs_result_set_err_invalid_read(&result->info);
+        cfs_result_message_write(&result->info, "Couldn't find environment variable 'HOME'.\n");
+        return;
+    }
+
+    if (!buffer)
+    {
+        cfs_result_set_err_invalid_write(&result->info);
+        return;
+    }
+
+    strncat(buffer, home_ptr, max_buffer_size);
+    if (strlen(home_ptr) >= max_buffer_size)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        result->value = strlen(home_ptr) + 1;
+    }
+    else
+        cfs_result_set_success(&result->info);
+}
+
+static inline void __dir_get_home_win32_d(struct cfs_result_string_t* result)
+{
+    char* home_drive = getenv("HOMEDRIVE");
+    char* home_path = getenv("HOMEPATH");
+    if (!home_drive || !home_path)
+    {
+        cfs_result_set_err_invalid_read(&result->info);
+        cfs_result_message_write(&result->info, "Couldn't find environment variable(s) 'HOMEDRIVE' and/or 'HOMEPATH'.\n");
+        return;
+    }
+
+    size_t home_size = strlen(home_drive) + strlen(home_path) + 1;
+    char* home = calloc(home_size, sizeof(char));
+    if (!home)
+    {
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
+        
+    strcat(home, home_drive);
+    strcat(home, home_path);
+
+    cfs_result_set_success(&result->info);
+    result->value = home;
+}
+
+static inline void __dir_get_home_win32_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size)
+{
+    char* home_drive = getenv("HOMEDRIVE");
+    char* home_path = getenv("HOMEPATH");
+    if (!home_drive || !home_path)
+    {
+        cfs_result_set_err_invalid_read(&result->info);
+        cfs_result_message_write(&result->info, "Couldn't find environment variable(s) 'HOMEDRIVE' and/or 'HOMEPATH'.\n");
+        return;
+    }
+
+    if (!buffer)
+    {
+        cfs_result_set_err_invalid_write(&result->info);
+        return;
+    }
+
+    size_t home_drive_len = strlen(home_drive);
+    size_t home_path_len = strlen(home_path);
+    size_t required_buffer_len = home_drive_len + home_path_len + 1;
+
+    strncat(buffer, home_drive, max_buffer_size);
+
+    if (home_drive_len >= max_buffer_size)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        result->value = required_buffer_len;
+        return;
+    }
+
+    max_buffer_size -= home_drive_len;
+
+    strncat(buffer, home_path, max_buffer_size);
+
+    if (home_drive_len >= max_buffer_size)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        result->value = required_buffer_len;
+        return;
+    }
+
+    cfs_result_set_success(&result->info);
+}
+
+static void __create_full_path_d(struct cfs_result_string_t* result, size_t n, bool use_leading_delim, const char** components)
 {
     char* path_buffer = __alloc_path_buffer(n, components);
     if (!path_buffer)
-        return NULL;
+    {
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
 
     if (use_leading_delim)
         __append_path_delim(path_buffer);
@@ -135,112 +294,256 @@ static char* __create_full_path(size_t n, bool use_leading_delim, const char** c
         if (strlen(component) == 0)
         {
             free(path_buffer);
-            return NULL;
+            cfs_result_set_err_invalid_arg(&result->info);
+            cfs_result_message_write(&result->info, "Path component cannot be length 0.\n");
+            return;
         }
         strcat(path_buffer, component);
         __append_path_delim(path_buffer);
     }
 
-    return path_buffer;
+    cfs_result_set_success(&result->info);
+    result->value = path_buffer;
 }
 
-static inline char* __dir_get_home_other()
+static void __create_full_path_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, bool use_leading_delim, const char** components)
 {
-    return strdup(getenv("HOME"));
-}
-
-static inline char* __dir_get_home_win32()
-{
-    char* home_drive = getenv("HOMEDRIVE");
-    char* home_path = getenv("HOMEPATH");
-    if (!home_drive || !home_path)
-        return NULL;
-
-    size_t home_size = strlen(home_drive) + strlen(home_path) + 1;
-    char* home = calloc(home_size, sizeof(char));
-    if (!home)
-        return NULL;
-        
-    strcat(home, home_drive);
-    strcat(home, home_path);
-
-    return home;
-}
-
-static char* __vcreate_full_path_from_home(size_t n, va_list component_list)
-{
-    char* home = cfs_path_home();
-    if (!home || strlen(home) == 0)
+    if (!buffer)
     {
-        free(home);
-        return NULL;
+        cfs_result_set_err_invalid_write(&result->info);
+        return;
+    }
+
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_invalid_arg(&result->info);
+        cfs_result_message_write(&result->info, "max_buffer_size must be > 0.\n");
+        return;
+    }
+
+    size_t required_buffer_size = __get_total_component_length(n, components) + 1;
+
+    if (use_leading_delim)
+        __append_path_delim(buffer);
+
+    max_buffer_size -= 1;
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        const char* component = components[i];
+        size_t component_len = strlen(component);
+        if (component_len == 0)
+        {
+            cfs_result_set_err_invalid_arg(&result->info);
+            cfs_result_message_write(&result->info, "Path component cannot have length 0.\n");
+            return;
+        }
+
+        strncat(buffer, component, component_len);
+        if (component_len >= max_buffer_size)
+        {
+            cfs_result_set_err_buffer_limit(&result->info);
+            result->value = required_buffer_size;
+            return;
+
+        }
+        max_buffer_size -= component_len;
+    }
+
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        result->value = required_buffer_size;
+        return;
+    }
+
+    __append_path_delim(buffer);
+    cfs_result_set_success(&result->info);
+}
+
+static void __vcreate_full_path_from_home_d(struct cfs_result_string_t* result, size_t n, va_list component_list)
+{
+    struct cfs_result_string_t home_result = cfs_path_home_d();
+    if (home_result.info.is_error)
+        *result = home_result;
+
+    // remove trailing '/' or '\' at end of home (if present)
+    // since it will be added back when appending path
+    size_t end_home = strlen(home_result.value) - 1;
+    if (home_result.value[end_home] == '/' || home_result.value[end_home] == '\\')
+        home_result.value[end_home] = '\0';
+
+    struct cfs_result_string_t path_result;
+    __vcreate_full_path_d(&path_result, n, false, component_list);
+    if (path_result.info.is_error)
+    {
+        cfs_result_string_free(&home_result);
+        *result = path_result;
+        return;
+    }
+
+    size_t len = strlen(home_result.value) + strlen(path_result.value) + 1;
+    char* full_path = calloc(len, sizeof(char));
+    if (!full_path)
+    {
+        cfs_result_string_free(&path_result);
+        cfs_result_string_free(&home_result);
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
+
+    strcat(full_path, home_result.value);
+    strcat(full_path, path_result.value);
+
+    cfs_result_string_free(&home_result);
+    cfs_result_string_free(&path_result);
+
+    cfs_result_set_success(&result->info);
+    result->value = full_path;
+}
+
+static void __vcreate_full_path_from_home_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, va_list component_list)
+{
+    if (!buffer)
+    {
+        cfs_result_set_err_invalid_write(&result->info);
+        return;
+    }
+
+    va_list path_component;
+    va_copy(path_component, component_list);
+    size_t required_buffer_size = __vget_total_component_length(n, path_component);
+    va_end(path_component);
+
+    struct cfs_result_size_t home_result = cfs_path_home_s(buffer, max_buffer_size);
+    if (home_result.info.is_error)
+    {
+        *result = home_result;
+        return;
+    }
+
+    size_t buffer_len = strlen(buffer);
+    max_buffer_size -= buffer_len;
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        return;
+    }
+
+    __append_path_delim(buffer);
+    max_buffer_size -= 1;
+
+    struct cfs_result_size_t path_result;
+    __vcreate_full_path_s(&path_result, buffer, max_buffer_size, n, false, component_list);
+    if (path_result.info.is_error)
+    {
+        *result = path_result;
+        return;
+    }
+    max_buffer_size -= strlen(buffer);
+
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        result->value = required_buffer_size;
+        return;
+    }
+
+    __append_path_delim(buffer);
+    cfs_result_set_success(&result->info);
+}
+
+static void __create_full_path_from_home_d(struct cfs_result_string_t* result, size_t n, const char** components)
+{
+    struct cfs_result_string_t home_result = cfs_path_home_d();
+    if (home_result.info.is_error)
+    {
+        *result = home_result;
+        return;
     }
 
     // remove trailing '/' or '\' at end of home (if present)
     // since it will be added back when appending path
-    size_t end_home = strlen(home) - 1;
-    if (home[end_home] == '/' || home[end_home] == '\\')
-        home[end_home] = '\0';
+    size_t end_home = strlen(home_result.value) - 1;
+    if (home_result.value[end_home] == '/' || home_result.value[end_home] == '\\')
+        home_result.value[end_home] = '\0';
 
-    char* path = __vcreate_full_path(n, false, component_list);
-    if (!path)
+    struct cfs_result_string_t path_result;
+    __create_full_path_d(&path_result, n, false, components);
+    if (path_result.info.is_error)
     {
-        free(home);
-        return NULL;
+        cfs_result_string_free(&home_result);
+        *result = path_result;
+        return;
     }
 
-    size_t len = strlen(home) + strlen(path) + 1;
+    size_t len = strlen(home_result.value) + strlen(path_result.value) + 1;
     char* full_path = calloc(len, sizeof(char));
     if (!full_path)
     {
-        free(home);
-        free(path);
-        return NULL;
+        cfs_result_set_err_no_mem(&result->info);
+        cfs_result_string_free(&home_result);
+        cfs_result_string_free(&path_result);
+        return;
     }
 
-    strcat(full_path, home);
-    strcat(full_path, path);
+    strcat(full_path, home_result.value);
+    strcat(full_path, path_result.value);
 
-    free(home);
-    free(path);
-    return full_path;
+    cfs_result_string_free(&home_result);
+    cfs_result_string_free(&path_result);
+
+    cfs_result_set_success(&result->info);
+    result->value = full_path;
 }
 
-static char* __create_full_path_from_home(size_t n, const char** const components)
+static void __create_full_path_from_home_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, const char** components)
 {
-    char* home = cfs_path_home();
-    if (!home || strlen(home) == 0)
+    if (!buffer)
     {
-        free(home);
-        return NULL;
+        cfs_result_set_err_invalid_write(&result->info);
+        return;
     }
 
-    // remove trailing '/' or '\' at end of home (if present)
-    // since it will be added back when appending path
-    size_t end_home = strlen(home) - 1;
-    if (home[end_home] == '/' || home[end_home] == '\\')
-        home[end_home] = '\0';
-
-    char* path = __create_full_path(n, false, components);
-    if (!path)
+    if (max_buffer_size == 0)
     {
-        free(home);
-        return NULL;
+        cfs_result_set_err_buffer_limit(&result->info);
+        cfs_result_message_write(&result->info, "max_buffer_size must be > 0.\n");
+        return;
     }
 
-    size_t len = strlen(home) + strlen(path) + 1;
-    char* full_path = calloc(len, sizeof(char));
-    if (!full_path)
+    size_t required_buffer_size = __get_total_component_length(n, components);
+
+    struct cfs_result_size_t home_result = cfs_path_home_s(buffer, max_buffer_size);
+    if (!home_result.info.is_error)
     {
-        free(home);
-        free(path);
-        return NULL;
+        *result = home_result;
+        return;
     }
 
-    strcat(full_path, home);
-    strcat(full_path, path);
+    max_buffer_size -= strlen(buffer);
+    if (max_buffer_size == 0)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        return;
+    }
 
-    free(home);
-    free(path);
-    return full_path;
+    __append_path_delim(buffer);
+    max_buffer_size -= 1;
+
+    struct cfs_result_size_t path_result;
+    __create_full_path_s(&path_result, buffer, max_buffer_size, n, false, components);
+    if (path_result.info.is_error)
+    {
+        *result = path_result;
+        return;
+    }
+
+    if (strlen(buffer) >= required_buffer_size)
+    {
+        cfs_result_set_err_buffer_limit(&result->info);
+        return;
+    }
+
+    __append_path_delim(buffer);
 }

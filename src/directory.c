@@ -3,6 +3,7 @@
 #include "path.h"
 #include <sys/stat.h>
 
+/*
 struct cfs_result_t cfs_dir_exists(const char* const path)
 {
     struct cfs_result_t result;
@@ -32,3 +33,4 @@ struct cfs_result_t cfs_dir_exists(const char* const path)
     cfs_result_value_set_bool(&result, false);
     return result;
 }
+*/

@@ -5,66 +5,117 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 #define CFS_MSG_SIZE 256
 
-/**
- * Different return data types that can be set/fetched from a result.
- */
-enum value_type_e
+enum error_type_e
 {
-    ECFS_VALUE_TYPE_NONE = 0,
-    ECFS_VALUE_TYPE_BOOL
+    // no error
+    ECFS_ERR_NONE = 0,
+    // expected data from pointer but NULL was found
+    ECFS_ERR_INVALID_READ,
+    // attempted to allocate memory and failed
+    ECFS_ERR_NO_MEM,
+    // attempted to write data to pointer but NULL was found
+    ECFS_ERR_INVALID_WRITE,
+    // reached end of maximum buffer size while writing data
+    ECFS_ERR_BUFFER_LIMIT,
+    // bad argument value
+    ECFS_ERR_INVALID_ARG,
+    // an error coming from the standard library (when errno is set)
+    ECFS_ERR_STDLIB
 };
 
-/**
- * This is a result tuple for error handling.
- * A function that returns cfs_result_t can set is_error with an optional msg.
- *
- * When consuming these functions, check for errors with cfs_result_iserror(&result).
- * Obtain a message with cfs_result_message_get(&result) which returns a (read-only) char*.
- *
- * For successes, different value types can be stored such as bools, ints, etc. The function documentation
- * should specify what data is returned on success, but you can use any of the getters such as cfs_result_get_bool(&result).
- * It's also possible a function may not return data and only uses this as a convenient way to store error messages.
- */
 struct cfs_result_t
 {
     bool is_error;
-    enum value_type_e value_type;
-    union value
-    {
-        bool as_bool;
-    } value;
+    enum error_type_e error_type;
     char msg[CFS_MSG_SIZE];
 };
 
-/**
- * Set whether or not the result is an error (i.e., there was a problem processing something.)
- * This is analogous to an exception being thrown.
- */
-void cfs_result_set_error(struct cfs_result_t* const result, bool is_error);
+struct cfs_result_bool_t
+{
+    struct cfs_result_t info;
+    bool value;
+};
+
+struct cfs_result_string_t
+{
+    struct cfs_result_t info;
+    char* value;
+};
+
+struct cfs_result_size_t
+{
+    struct cfs_result_t info;
+    size_t value;
+};
 
 /**
- * Sets a boolean value for the result content.
+ * Free the memory pointed to by cfs_result_string_t
  */
-void cfs_result_value_set_bool(struct cfs_result_t* const result, bool value);
+void cfs_result_string_free(struct cfs_result_string_t* result);
 
 /**
- * Get the result value as a bool.
+ * Set is_error = false and set error_type to ECFS_ERR_NONE to indicate
+ * a success.
  */
-bool cfs_result_value_get_bool(const struct cfs_result_t* const result);
+void cfs_result_set_success(struct cfs_result_t* result);
+
+/**
+ * Set is_error = true and set error_type to ECFS_ERR_INVALID_READ.
+ * 
+ * Provides default message "Attempted to read data from pointer but got NULL." but can be overwritten.
+ */
+void cfs_result_set_err_invalid_read(struct cfs_result_t* result);
+
+/**
+ * Set is_error = true and set error_type to ECFS_ERR_NO_MEM.
+ *
+ * Provides default message "Couldn't allocate enough memory." but can be overwritten.
+ */
+void cfs_result_set_err_no_mem(struct cfs_result_t* result);
+
+/**
+ * Set is_error = true and set error_type to ECFS_ERR_INVALID_WRITE.
+ *
+ * Provides default message "Attempted to write data to pointer but got NULL." but can be overwritten.
+ */
+void cfs_result_set_err_invalid_write(struct cfs_result_t* result);
+
+/**
+ * Set is_error = true and set error_type to ECFS_ERR_BUFFER_LIMIT.
+ *
+ * Provides default message "Reached end of maximum buffer size while writing data." but can be overwritten.
+ */
+void cfs_result_set_err_buffer_limit(struct cfs_result_t* result);
+
+/**
+ * Set is_error = true and set error_type to ECFS_ERR_STDLIB.
+ * 
+ * Writes message from strerror(errno) but can be overwritten.
+ */
+void cfs_result_set_err_stdlib(struct cfs_result_t* result);
+
+/**
+ * Set is_error = true and set error_type to ECFS_ERR_INVALID_ARG.
+ *
+ * Provides default message "Invalid argument value." but can be overwritten.
+ */
+void cfs_result_set_err_invalid_arg(struct cfs_result_t* result);
 
 /**
  * Returns a const pointer to the message contained in the result.
  */
-const char* cfs_result_message_get(const struct cfs_result_t* const result);
+const char* cfs_result_message_get(const struct cfs_result_t* result);
 
 /**
  * Automatically write the errno message from strerror(errno) into msg within cfs_result_t.
  * Used when dealing with functions from the C standard library to wrap them in cfs_result_t.
  */
-void cfs_result_message_write_perror(struct cfs_result_t* const result);
+void cfs_result_message_write_perror(struct cfs_result_t* result);
 
 /**
  * Writes [msg] into msg up to CFS_MSG_SIZE - 1 bytes.
