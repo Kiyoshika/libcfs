@@ -1,0 +1,4 @@
+add_executable(path_exists_test path_exists_test.c)
+target_include_directories(path_exists_test PUBLIC ${CMAKE_CURRENT_PROJECT_DIR}/include)
+target_link_libraries(path_exists_test cfs)
+add_test(NAME path_exists_test COMMAND path_exists_test)

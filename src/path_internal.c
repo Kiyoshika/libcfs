@@ -490,3 +490,210 @@ static void __create_full_path_from_home_s(struct cfs_result_size_t* result, cha
 
     __append_path_delim(buffer);
 }
+
+#if defined(_WIN32) || defined(_WIN64) || defined(_WINDOWS)
+    static void __current_dir_win32_d(struct cfs_result_string_t* result)
+    {
+        DWORD buff_size = GetCurrentDirectory(0, NULL);
+        char* buffer = calloc(buff_size + 1, sizeof(char));
+        if (!buffer)
+        {
+            cfs_result_set_err_no_mem(&result->info);
+            return;
+        }
+
+        if (GetCurrentDirectory(buff_size, buffer) == 0)
+        {
+            free(buffer);
+            cfs_result_set_err_invalid_read(&result->info);
+            cfs_result_message_write(&result->info, "Couldn't get current directory.\n");
+            return;
+        }
+
+        result->value = buffer;
+        cfs_result_set_success(&result->info);
+    }
+
+    static void __current_dir_win32_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size)
+    {
+        DWORD required_buffer_size = GetCurrentDirectory(0, NULL);
+        if (max_buffer_size < (size_t)required_buffer_size)
+        {
+            cfs_result_set_err_buffer_limit(&result->info);
+            result->value = required_buffer_size;
+            return;
+        }
+
+        if (GetCurrentDirectory(max_buffer_size, buffer) == 0)
+        {
+            cfs_result_set_err_stdlib(&result->info);
+            cfs_result_message_write(&result->info, "Couldn't retrieve current directory.\n");
+            return;
+        }
+
+        cfs_result_set_success(&result->info);
+    }
+#else
+    static void __current_dir_other_d(struct cfs_result_string_t* result)
+    {
+        char* path = getcwd(NULL, 0);
+        if (!path)
+        {
+            cfs_result_set_err_no_mem(&result->info);
+            return;
+        }
+
+        result->value = path;
+        cfs_result_set_success(&result->info);
+    }
+
+    static void __current_dir_other_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size)
+    {
+        char* path = getcwd(buffer, max_buffer_size);
+        if (!path)
+        {
+            cfs_result_set_err_buffer_limit(&result->info);
+            result->value = 0;
+            return;
+        }
+
+        cfs_result_set_success(&result->info);
+        return;
+    }
+#endif
+
+static void __vcreate_full_path_from_current_dir_d(struct cfs_result_string_t* result, size_t n, va_list path_components)
+{
+    struct cfs_result_string_t path_result;
+
+    va_list path_components_copy;
+    va_copy(path_components_copy, path_components);
+    __vcreate_full_path_d(&path_result, true, n, path_components_copy);
+    va_end(path_components_copy);
+
+    if (path_result.info.is_error)
+    {
+        *result = path_result;
+        return;
+    }
+
+    struct cfs_result_string_t current_dir_result;
+
+    CFS_IMPL_WIN_OTHER(
+    {
+        __current_dir_win32_d(&current_dir_result);
+    },
+    {
+        __current_dir_other_d(&current_dir_result);
+    });
+
+    if (current_dir_result.info.is_error)
+    {
+        *result = current_dir_result;
+        return;
+    }
+
+    char* buffer = calloc(strlen(current_dir_result.value) + strlen(path_result.value) + 1, sizeof(char));
+    if (!buffer)
+    {
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
+
+    strcat(buffer, current_dir_result.value);
+    strcat(buffer, path_result.value);
+
+    result->value = buffer;
+    cfs_result_set_success(&result->info);
+}
+
+static void __vcreate_full_path_from_current_dir_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, va_list path_components) 
+{
+    CFS_IMPL_WIN_OTHER(
+    {
+        __current_dir_win32_s(result, buffer, max_buffer_size);
+    },
+    {
+        __current_dir_other_s(result, buffer, max_buffer_size);
+    });
+
+    if (result->info.is_error)
+        return;
+
+    max_buffer_size -= strlen(buffer);
+
+    va_list path_components_copy;
+    va_copy(path_components_copy, path_components);
+    __vcreate_full_path_s(result, buffer, max_buffer_size, true, n, path_components_copy);
+    va_end(path_components_copy);
+
+    if (result->info.is_error)
+        return;
+
+    cfs_result_set_success(&result->info);
+}
+
+static void __create_full_path_from_current_dir_d(struct cfs_result_string_t* result, size_t n, const char** components)
+{
+    struct cfs_result_string_t path_result;
+
+    __create_full_path_d(&path_result, true, n, components);
+
+    if (path_result.info.is_error)
+    {
+        *result = path_result;
+        return;
+    }
+
+    struct cfs_result_string_t current_dir_result;
+
+    CFS_IMPL_WIN_OTHER(
+    {
+        __current_dir_win32_d(&current_dir_result);
+    },
+    {
+        __current_dir_other_d(&current_dir_result);
+    });
+
+    if (current_dir_result.info.is_error)
+    {
+        *result = current_dir_result;
+        return;
+    }
+
+    char* buffer = calloc(strlen(current_dir_result.value) + strlen(path_result.value) + 1, sizeof(char));
+    if (!buffer)
+    {
+        cfs_result_set_err_no_mem(&result->info);
+        return;
+    }
+
+    strcat(buffer, current_dir_result.value);
+    strcat(buffer, path_result.value);
+
+    result->value = buffer;
+    cfs_result_set_success(&result->info);
+}
+
+static void __create_full_path_from_current_dir_s(struct cfs_result_size_t* result, char* buffer, size_t max_buffer_size, size_t n, const char** components)
+{
+    CFS_IMPL_WIN_OTHER(
+    {
+        __current_dir_win32_s(result, buffer, max_buffer_size);
+    },
+    {
+        __current_dir_other_s(result, buffer, max_buffer_size);
+    });
+
+    if (result->info.is_error)
+        return;
+
+    max_buffer_size -= strlen(buffer);
+
+    __create_full_path_s(result, buffer, max_buffer_size, true, n, components);
+
+    if (result->info.is_error)
+        return;
+
+    cfs_result_set_success(&result->info);
+}

@@ -33,6 +33,13 @@ struct cfs_result_bool_t cfs_path_exists(const char* const path)
 {
     struct cfs_result_bool_t result;
 
+    if (!path)
+    {
+        cfs_result_set_err_invalid_read(&result.info);
+        cfs_result_message_write(&result.info, "Path cannot be NULL.\n");
+        return result;
+    }
+
     struct stat s = {0};
     int stat_result = stat(path, &s);
     if (stat_result == -1)
@@ -357,38 +364,26 @@ struct cfs_result_string_t cfs_path_current_dir_d()
 
     CFS_IMPL_WIN_OTHER(
     {
-        DWORD buff_size = GetCurrentDirectory(0, NULL);
-        char* buffer = calloc(buff_size + 1, sizeof(char));
-        if (!buffer)
-        {
-            cfs_result_set_err_no_mem(&result.info);
-            return result;
-        }
-
-        if (GetCurrentDirectory(buff_size, buffer) == 0)
-        {
-            free(buffer);
-            cfs_result_set_err_invalid_read(&result.info);
-            cfs_result_message_write(&result.info, "Couldn't get current directory.\n");
-            return result;
-        }
-
-        result.value = buffer;
-        cfs_result_set_success(&result.info);
-
-        return result;
+        __current_dir_win32_d(&result);
     },
     {
-        char* path = getcwd(NULL, 0);
-        if (!path)
-        {
-            cfs_result_set_err_no_mem(&result.info);
-            return result;
-        }
-
-        result.value = path;
-        cfs_result_set_success(&result.info);
-
-        return result;
+        __current_dir_other_d(&result);
     });
+
+    return result;
+}
+
+struct cfs_result_size_t cfs_path_current_dir_s(char* buffer, size_t max_buffer_size)
+{
+    struct cfs_result_size_t result;
+
+    CFS_IMPL_WIN_OTHER(
+    {
+        __current_dir_win32_s(&result, buffer, max_buffer_size);
+    },
+    {
+        __current_dir_other_s(&result, buffer, max_buffer_size);
+    });
+
+    return result;
 }
