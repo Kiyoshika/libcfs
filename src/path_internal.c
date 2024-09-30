@@ -96,6 +96,7 @@ static void __vcreate_full_path_d(struct cfs_result_string_t* result, size_t n, 
     }
     va_end(path_component_copy);
 
+    result->value = path_buffer;
     cfs_result_set_success(&result->info);
 }
 
@@ -133,6 +134,18 @@ static void __vcreate_full_path_s(struct cfs_result_size_t* result, char* buffer
             return;
         }
         max_buffer_size -= component_len;
+        if (max_buffer_size == 0)
+        {
+            cfs_result_set_err_buffer_limit(&result->info);
+            result->value = required_buffer_size;
+            return;
+        }
+
+        if (i < n - 1)
+        {
+            __append_path_delim(buffer);
+            max_buffer_size -= 1;
+        }
     }
     va_end(path_component);
 
