@@ -17,3 +17,13 @@ add_executable(path_file_test path_file_test.c)
 target_include_directories(path_file_test PUBLIC ${CMAKE_CURRENT_PROJECT_DIR}/include)
 target_link_libraries(path_file_test cfs)
 add_test(NAME path_file_test COMMAND path_file_test)
+
+add_executable(path_dir_from_home path_dir_from_home.c)
+target_include_directories(path_dir_from_home PUBLIC ${CMAKE_CURRENT_PROJECT_DIR}/include)
+target_link_libraries(path_dir_from_home cfs)
+add_test(NAME path_dir_from_home COMMAND path_dir_from_home)
+
+add_executable(path_file_from_home path_file_from_home.c)
+target_include_directories(path_file_from_home PUBLIC ${CMAKE_CURRENT_PROJECT_DIR}/include)
+target_link_libraries(path_file_from_home cfs)
+add_test(NAME path_file_from_home COMMAND path_file_from_home)

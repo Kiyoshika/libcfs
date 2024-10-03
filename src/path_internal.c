@@ -349,7 +349,7 @@ static void __vcreate_full_path_from_home_d(struct cfs_result_string_t* result, 
         home_result.value[end_home] = '\0';
 
     struct cfs_result_string_t path_result;
-    __vcreate_full_path_d(&path_result, n, false, component_list);
+    __vcreate_full_path_d(&path_result, n, true, component_list);
     if (path_result.info.is_error)
     {
         cfs_result_string_free(&home_result);
@@ -411,14 +411,6 @@ static void __vcreate_full_path_from_home_s(struct cfs_result_size_t* result, ch
     }
     max_buffer_size -= strlen(buffer);
 
-    if (max_buffer_size == 0)
-    {
-        cfs_result_set_err_buffer_limit(&result->info);
-        result->value = required_buffer_size;
-        return;
-    }
-
-    __append_path_delim(buffer);
     cfs_result_set_success(&result->info);
 }
 
@@ -438,7 +430,7 @@ static void __create_full_path_from_home_d(struct cfs_result_string_t* result, s
         home_result.value[end_home] = '\0';
 
     struct cfs_result_string_t path_result;
-    __create_full_path_d(&path_result, n, false, components);
+    __create_full_path_d(&path_result, n, true, components);
     if (path_result.info.is_error)
     {
         cfs_result_string_free(&home_result);
@@ -500,8 +492,6 @@ static void __create_full_path_from_home_s(struct cfs_result_size_t* result, cha
         cfs_result_set_err_buffer_limit(&result->info);
         return;
     }
-
-    __append_path_delim(buffer);
 }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WINDOWS)
