@@ -571,7 +571,7 @@ static void __vcreate_full_path_from_current_dir_d(struct cfs_result_string_t* r
 
     va_list path_components_copy;
     va_copy(path_components_copy, path_components);
-    __vcreate_full_path_d(&path_result, true, n, path_components_copy);
+    __vcreate_full_path_d(&path_result, n, true, path_components_copy);
     va_end(path_components_copy);
 
     if (path_result.info.is_error)
@@ -627,7 +627,7 @@ static void __vcreate_full_path_from_current_dir_s(struct cfs_result_size_t* res
 
     va_list path_components_copy;
     va_copy(path_components_copy, path_components);
-    __vcreate_full_path_s(result, buffer, max_buffer_size, true, n, path_components_copy);
+    __vcreate_full_path_s(result, buffer, max_buffer_size, n, true, path_components_copy);
     va_end(path_components_copy);
 
     if (result->info.is_error)
@@ -640,7 +640,7 @@ static void __create_full_path_from_current_dir_d(struct cfs_result_string_t* re
 {
     struct cfs_result_string_t path_result;
 
-    __create_full_path_d(&path_result, true, n, components);
+    __create_full_path_d(&path_result, n, true, components);
 
     if (path_result.info.is_error)
     {

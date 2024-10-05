@@ -27,3 +27,8 @@ add_executable(path_file_from_home path_file_from_home.c)
 target_include_directories(path_file_from_home PUBLIC ${CMAKE_CURRENT_PROJECT_DIR}/include)
 target_link_libraries(path_file_from_home cfs)
 add_test(NAME path_file_from_home COMMAND path_file_from_home)
+
+add_executable(path_dir_from_current_dir path_dir_from_current_dir.c)
+target_include_directories(path_dir_from_current_dir PUBLIC ${CMAKE_CURRENT_PROJECT_DIR}/include)
+target_link_libraries(path_dir_from_current_dir cfs)
+add_test(NAME path_dir_from_current_dir COMMAND path_dir_from_current_dir)
