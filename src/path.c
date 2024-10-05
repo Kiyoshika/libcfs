@@ -33,6 +33,13 @@ struct cfs_result_bool_t cfs_path_exists(const char* const path)
 {
     struct cfs_result_bool_t result;
 
+    if (!path)
+    {
+        cfs_result_set_err_invalid_read(&result.info);
+        cfs_result_message_write(&result.info, "Path cannot be NULL.\n");
+        return result;
+    }
+
     struct stat s = {0};
     int stat_result = stat(path, &s);
     if (stat_result == -1)
@@ -70,6 +77,8 @@ struct cfs_result_size_t cfs_path_home_s(char* buffer, size_t max_buffer_size)
 
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
 
+    memset(buffer, 0, max_buffer_size);
+
     CFS_IMPL_WIN_OTHER(
     {
         __dir_get_home_win32_s(&result, buffer, max_buffer_size);
@@ -102,6 +111,8 @@ struct cfs_result_size_t vcfs_path_dir_s(bool use_leading_delim, char* buffer, s
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
     CHECK_ARGS_N(result, n);
 
+    memset(buffer, 0, max_buffer_size);
+
     va_list component_list;
     va_start(component_list, n);
     __vcreate_full_path_s(&result, buffer, max_buffer_size, n, use_leading_delim, component_list);
@@ -128,6 +139,8 @@ struct cfs_result_size_t cfs_path_dir_s(bool use_leading_delim, char* buffer, si
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
     CHECK_ARGS_N(result, n);
     CHECK_ARGS_COMPONENTS(result, components);
+
+    memset(buffer, 0, max_buffer_size);
 
     __create_full_path_s(&result, buffer, max_buffer_size, n, use_leading_delim, components);
     return result;
@@ -161,6 +174,8 @@ struct cfs_result_size_t vcfs_path_file_s(bool use_leading_delim, char* buffer, 
     struct cfs_result_size_t result;
 
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
+
+    memset(buffer, 0, max_buffer_size);
 
     va_list component_list;
     va_start(component_list, n);
@@ -205,6 +220,8 @@ struct cfs_result_size_t cfs_path_file_s(bool use_leading_delim, char* buffer, s
     CHECK_ARGS_N(result, n);
     CHECK_ARGS_COMPONENTS(result, components);
 
+    memset(buffer, 0, max_buffer_size);
+
     __create_full_path_s(&result, buffer, max_buffer_size, use_leading_delim, n, components);
     if (result.info.is_error)
         return result;
@@ -237,6 +254,8 @@ struct cfs_result_size_t vcfs_path_dir_from_home_s(char* buffer, size_t max_buff
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
     CHECK_ARGS_N(result, n);
 
+    memset(buffer, 0, max_buffer_size);
+
     va_list component_list;
     va_start(component_list, n);
     __vcreate_full_path_from_home_s(&result, buffer, max_buffer_size, n, component_list);
@@ -263,6 +282,8 @@ struct cfs_result_size_t cfs_path_dir_from_home_s(char* buffer, size_t max_buffe
 
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
     CHECK_ARGS_N(result, n);
+
+    memset(buffer, 0, max_buffer_size);
 
     __create_full_path_from_home_s(&result, buffer, max_buffer_size, n, components);
 
@@ -298,6 +319,8 @@ struct cfs_result_size_t vcfs_path_file_from_home_s(char* buffer, size_t max_buf
 
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
     CHECK_ARGS_N(result, n);
+
+    memset(buffer, 0, max_buffer_size);
 
     va_list component_list;
     va_start(component_list, n);
@@ -342,6 +365,8 @@ struct cfs_result_size_t cfs_path_file_from_home_s(char* buffer, size_t max_buff
     CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
     CHECK_ARGS_N(result, n);
 
+    memset(buffer, 0, max_buffer_size);
+
     __create_full_path_from_home_s(&result, buffer, max_buffer_size, n, components);
 
     size_t buffer_len = strlen(buffer);
@@ -357,38 +382,174 @@ struct cfs_result_string_t cfs_path_current_dir_d()
 
     CFS_IMPL_WIN_OTHER(
     {
-        DWORD buff_size = GetCurrentDirectory(0, NULL);
-        char* buffer = calloc(buff_size + 1, sizeof(char));
-        if (!buffer)
-        {
-            cfs_result_set_err_no_mem(&result.info);
-            return result;
-        }
-
-        if (GetCurrentDirectory(buff_size, buffer) == 0)
-        {
-            free(buffer);
-            cfs_result_set_err_invalid_read(&result.info);
-            cfs_result_message_write(&result.info, "Couldn't get current directory.\n");
-            return result;
-        }
-
-        result.value = buffer;
-        cfs_result_set_success(&result.info);
-
-        return result;
+        __current_dir_win32_d(&result);
     },
     {
-        char* path = getcwd(NULL, 0);
-        if (!path)
-        {
-            cfs_result_set_err_no_mem(&result.info);
-            return result;
-        }
-
-        result.value = path;
-        cfs_result_set_success(&result.info);
-
-        return result;
+        __current_dir_other_d(&result);
     });
+
+    return result;
+}
+
+struct cfs_result_size_t cfs_path_current_dir_s(char* buffer, size_t max_buffer_size)
+{
+    struct cfs_result_size_t result;
+
+    CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
+
+    memset(buffer, 0, max_buffer_size);
+
+
+    CFS_IMPL_WIN_OTHER(
+    {
+        __current_dir_win32_s(&result, buffer, max_buffer_size);
+    },
+    {
+        __current_dir_other_s(&result, buffer, max_buffer_size);
+    });
+
+    return result;
+}
+
+struct cfs_result_string_t vcfs_path_dir_from_current_dir_d(size_t n, ...)
+{
+    struct cfs_result_string_t result;
+
+    CHECK_ARGS_N(result, n);
+
+    va_list path_components;
+    va_start(path_components, n);
+    __vcreate_full_path_from_current_dir_d(&result, n, path_components);
+    va_end(path_components);
+
+    return result;
+}
+
+struct cfs_result_size_t vcfs_path_dir_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, ...)
+{
+    struct cfs_result_size_t result;
+
+    CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
+    CHECK_ARGS_N(result, n);
+
+    memset(buffer, 0, max_buffer_size);
+
+    va_list path_components;
+    va_start(path_components, n);
+    __vcreate_full_path_from_current_dir_s(&result, buffer, max_buffer_size, n, path_components);
+    va_end(path_components);
+
+    return result;
+}
+
+struct cfs_result_string_t cfs_path_dir_from_current_dir_d(size_t n, const char** components)
+{
+    struct cfs_result_string_t result;
+
+    CHECK_ARGS_N(result, n);
+    CHECK_ARGS_COMPONENTS(result, components);
+
+    __create_full_path_from_current_dir_d(&result, n, components);
+
+    return result;
+}
+
+struct cfs_result_size_t cfs_path_dir_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, const char** components)
+{
+    struct cfs_result_size_t result;
+
+    CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
+    CHECK_ARGS_N(result, n);
+    CHECK_ARGS_COMPONENTS(result, components);
+
+    memset(buffer, 0, max_buffer_size);
+
+    __create_full_path_from_current_dir_s(&result, buffer, max_buffer_size, n, components);
+
+    return result;
+}
+
+struct cfs_result_string_t vcfs_path_file_from_current_dir_d(size_t n, ...)
+{
+    struct cfs_result_string_t result;
+
+    CHECK_ARGS_N(result, n);
+
+    va_list path_components;
+    va_start(path_components, n);
+    __vcreate_full_path_from_current_dir_d(&result, n, path_components);
+    va_end(path_components);
+
+    if (result.info.is_error)
+        return result;
+
+    size_t path_len = strlen(result.value);
+    if (path_len > 0)
+        result.value[path_len - 1] = '\0';
+
+    return result;
+}
+
+struct cfs_result_size_t vcfs_path_file_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, ...)
+{
+    struct cfs_result_size_t result;
+
+    CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
+    CHECK_ARGS_N(result, n);
+
+    memset(buffer, 0, max_buffer_size);
+
+    va_list path_components;
+    va_start(path_components, n);
+    __vcreate_full_path_from_current_dir_s(&result, buffer, max_buffer_size, n, path_components);
+    va_end(path_components);
+
+    if (result.info.is_error)
+        return result;
+
+    size_t path_len = strlen(buffer);
+    if (path_len > 0)
+        buffer[path_len - 1] = '\0';
+
+    return result;
+}
+
+struct cfs_result_string_t cfs_path_file_from_current_dir_d(size_t n, const char** components)
+{
+    struct cfs_result_string_t result;
+
+    CHECK_ARGS_N(result, n);
+    CHECK_ARGS_COMPONENTS(result, components);
+
+    __create_full_path_from_current_dir_d(&result, n, components);
+
+    if (result.info.is_error)
+        return result;
+
+    size_t path_len = strlen(result.value);
+    if (path_len > 0)
+        result.value[path_len - 1] = '\0';
+
+    return result;
+}
+
+struct cfs_result_size_t cfs_path_file_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, const char** components)
+{
+    struct cfs_result_size_t result;
+
+    CHECK_ARGS_BUFFER(result, buffer, max_buffer_size);
+    CHECK_ARGS_N(result, n);
+
+    memset(buffer, 0, max_buffer_size);
+
+    __create_full_path_from_current_dir_s(&result, buffer, max_buffer_size, n, components);
+
+    if (result.info.is_error)
+        return result;
+
+    size_t path_len = strlen(buffer);
+    if (path_len > 0)
+        buffer[path_len - 1] = '\0';
+
+    return result;
 }

@@ -228,7 +228,71 @@ struct cfs_result_string_t cfs_path_current_dir_d();
  *
  * If [buffer] is NULL, is_error is set to true with error_type = CFS_ERR_INVALID_WRITE
  *
- * If the provided buffer was not big enough, is_error is set to true with error_type = CFS_ERR_BUFFER_LIMIT 
- * and a size_t value is written containing the required buffer size.
+ * If the provided buffer was not big enough, is_error is set to true with error_type = CFS_ERR_BUFFER_LIMIT.
+ * NOTE: on UNIX, we can't get the required buffer size without allocating on the heap so the value is set to 0 instead of using the heap.
  */
 struct cfs_result_size_t cfs_path_current_dir_s(char* buffer, size_t max_buffer_size);
+
+/**
+ * Get a directory path relative to the current directory using variadic arguments.
+ *
+ * Stores a heap-allocated char* containing the constructed path on success.
+ */
+struct cfs_result_string_t vcfs_path_dir_from_current_dir_d(size_t n, ...);
+
+/**
+ * Get a directory path relative to the current directory using variadic arguments.
+ *
+ * Writes the constructed path into [buffer] up to [max_buffer_size] on success.
+ * If max_buffer_size isn't big enough, is_error is set to true with error_type = ECFS_ERR_BUFFER_LIMIT and the required buffer size is stored into the result.
+ * NOTE: on UNIX, the required buffer size cannot be obtained without allocating on the heap, so 0 is stored instead of using the heap.
+ */
+struct cfs_result_size_t vcfs_path_dir_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, ...);
+
+/**
+ * Get a file path relative to the current directory using variadic arguments.
+ *
+ * Stores a heap-allocated char* containing the constructed path on success.
+ */
+struct cfs_result_string_t vcfs_path_file_from_current_dir_d(size_t n, ...);
+
+/**
+ * Get a file path relative to the current directory using variadic arguments.
+ *
+ * Writes the constructed path into [buffer] up to [max_buffer_size] on success.
+ * If max_buffer_size isn't big enough, is_error is set to true with error_type = ECFS_ERR_BUFFER_LIMIT and the required buffer size is stored into the result.
+ * NOTE: on UNIX, the required buffer size cannot be obtained without allocating on the heap, so 0 is stored instead of using the heap.
+ */
+struct cfs_result_size_t vcfs_path_file_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, ...);
+
+/**
+ * Get a directory path relative to the current directory using a dynamic array of strings.
+ *
+ * Stores a heap-allocated char* containing the constructed path on success.
+ */
+struct cfs_result_string_t cfs_path_dir_from_current_dir_d(size_t n, const char** components);
+
+/**
+ * Get a directory path relative to the current directory using a dynamic array of strings.
+ *
+ * Writes the constructed path into [buffer] up to [max_buffer_size] on success.
+ * If max_buffer_size isn't big enough, is_error is set to true with error_type = ECFS_ERR_BUFFER_LIMIT and the required buffer size is stored into the result.
+ * NOTE: on UNIX, the required buffer size cannot be obtained without allocating on the heap, so 0 is stored instead of using the heap.
+ */
+struct cfs_result_size_t cfs_path_dir_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, const char** components);
+
+/**
+ * Get a file path relative to the current directory using a dynamic array of strings.
+ *
+ * Stores a heap-allocated char* containing the constructed path on success.
+ */
+struct cfs_result_string_t cfs_path_file_from_current_dir_d(size_t n, const char** components);
+
+/**
+ * Get a file path relative to the current directory using a dynamic array of strings.
+ *
+ * Writes the constructed path into [buffer] up to [max_buffer_size] on success.
+ * If max_buffer_size isn't big enough, is_error is set to true with error_type = ECFS_ERR_BUFFER_LIMIT and the required buffer size is stored into the result.
+ * NOTE: on UNIX, the required buffer size cannot be obtained without allocating on the heap, so 0 is stored instead of using the heap.
+ */
+struct cfs_result_size_t cfs_path_file_from_current_dir_s(char* buffer, size_t max_buffer_size, size_t n, const char** components);
